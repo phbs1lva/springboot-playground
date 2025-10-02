@@ -6,14 +6,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-@Setter
-public class UserSignUpRequest {
+public class UserSignUpDTO {
     @NotNull
     @Email
     private String email;
-
-    @NotNull
-    private String username;
 
     @NotNull
     private String password;
