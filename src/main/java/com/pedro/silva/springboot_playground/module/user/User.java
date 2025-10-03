@@ -22,7 +22,7 @@ public class User implements UserDetails {
     private UUID id;
 
     @Column(length = 30, nullable = false, unique = true)
-    private String email;
+    private String username;
 
     @Column(length = 200, nullable = false)
     private String password;
@@ -33,11 +33,6 @@ public class User implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();
-    }
-
-    @Override
-    public String getUsername() {
-        return this.getEmail();
     }
 
     @Override
