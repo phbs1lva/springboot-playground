@@ -1,51 +1,56 @@
 package com.pedro.silva.springboot_playground.module.auth;
 
+import com.pedro.silva.springboot_playground.module.auth.dto.KeycloakTokenErrorResponseDTO;
+import com.pedro.silva.springboot_playground.module.auth.dto.KeycloakTokenSuccessResponseDTO;
 import com.pedro.silva.springboot_playground.module.auth.dto.SignInRequestDTO;
-import com.pedro.silva.springboot_playground.module.auth.dto.SignUpRequestDTO;
-import com.pedro.silva.springboot_playground.module.auth.dto.SignUpResponseDTO;
-import com.pedro.silva.springboot_playground.module.auth.mapper.SignUpMapper;
-import com.pedro.silva.springboot_playground.module.user.User;
+import com.pedro.silva.springboot_playground.module.auth.exception.UserNotFoundException;
 import com.pedro.silva.springboot_playground.module.user.UserRepository;
-import com.pedro.silva.springboot_playground.module.user.exception.UserAlreadyExistsException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
-    private final SignUpMapper signUpMapper;
-
     private final UserRepository userRepository;
 
-    private final PasswordEncoder passwordEncoder;
+    private static MultiValueMap<String, String> buildJwtTokenMultiValueMap(SignInRequestDTO signInRequestDTO) {
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
 
-    private final AuthenticationManager authenticationManager;
+        map.add("grant_type", "password");
+        map.add("client_id", "spring-playground");
+        map.add("client_secret", "yL7x92oWAqpOKR0vOONMN4SJ0rPEtxqi");
+        map.add("username", signInRequestDTO.getUsername());
+        map.add("password", signInRequestDTO.getPassword());
 
-    public SignUpResponseDTO signup(SignUpRequestDTO signUpRequestDTO) {
-        if (userRepository.existsByUsername(signUpRequestDTO.getUsername())) {
-            throw new UserAlreadyExistsException("Username is already taken");
-        }
-
-        User newUser = new User();
-
-        newUser.setUsername(signUpRequestDTO.getUsername());
-        newUser.setPassword(passwordEncoder.encode(signUpRequestDTO.getPassword()));
-
-        User createdUser = userRepository.save(newUser);
-
-        return signUpMapper.toResponse(createdUser);
+        return map;
     }
 
-    public User authenticate(SignInRequestDTO signInRequestDTO) {
-        String username = signInRequestDTO.getUsername();
-        String password = signInRequestDTO.getPassword();
+    public Mono<KeycloakTokenSuccessResponseDTO> authenticate(SignInRequestDTO signInRequestDTO) {
+        WebClient webClient = WebClient.create("http://localhost:7777/realms/spring-playground/protocol/openid-connect/token");
 
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        MultiValueMap<String, String> payload = buildJwtTokenMultiValueMap(signInRequestDTO);
 
-        return userRepository.findByUsername(username)
-                             .orElseThrow();
+        return webClient
+                .post()
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(BodyInserters.fromFormData(payload))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
+                        response
+                                .bodyToMono(KeycloakTokenErrorResponseDTO.class)
+                                .flatMap(dto -> {
+                                    return Mono.error(new UserNotFoundException(
+                                            HttpStatus.UNAUTHORIZED.getReasonPhrase()
+                                    ));
+                                }))
+                .bodyToMono(KeycloakTokenSuccessResponseDTO.class);
     }
 }
