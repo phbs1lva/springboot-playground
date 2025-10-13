@@ -12,9 +12,60 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - spring-network
+  keycloak_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5433:5433"
+    volumes:
+      - keycloak_data:/var/lib/postgresql/data/pgdata
+    networks:
+      - spring-network
+    restart: always
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.1
+    command:
+      - start-dev
+      - --import-realm
+    ports:
+      - 7777:7777
+    volumes:
+      - ./keycloak/:/opt/keycloak/data/import/
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 7777
+      KC_HOSTNAME_URL: http://localhost:7777
+      KC_HOSTNAME_ADMIN_URL: http://localhost:7777
+      KC_HOSTNAME_STRICT_BACKCHANNEL: true
+      KC_HTTP_RELATIVE_PATH: /
+      KC_HTTP_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak_db/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: [ 'CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/auth/health/live' ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      - keycloak_db
+    networks:
+      - spring-network
+    restart: always
 
 volumes:
   postgres_data:
+  keycloak_data:
 
 networks:
   spring-network:
