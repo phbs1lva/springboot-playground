@@ -3,7 +3,7 @@ package com.pedro.silva.springboot_playground.module.auth.dto;
 import lombok.Value;
 
 @Value
-public class KeycloakTokenErrorResponseDTO {
+public class KeycloakTokenErrorResponse {
     String error;
 
     String error_description;

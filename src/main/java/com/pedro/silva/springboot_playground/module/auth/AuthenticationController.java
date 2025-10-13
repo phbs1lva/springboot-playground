@@ -1,7 +1,7 @@
 package com.pedro.silva.springboot_playground.module.auth;
 
-import com.pedro.silva.springboot_playground.module.auth.dto.KeycloakTokenSuccessResponseDTO;
-import com.pedro.silva.springboot_playground.module.auth.dto.SignInRequestDTO;
+import com.pedro.silva.springboot_playground.module.auth.dto.*;
+import com.pedro.silva.springboot_playground.module.user.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Mono;
 
 @RequestMapping("/api/auth")
 @RestController
@@ -17,10 +16,17 @@ import reactor.core.publisher.Mono;
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
-    @PostMapping("/signin")
-    public Mono<ResponseEntity<KeycloakTokenSuccessResponseDTO>> signin(@RequestBody @Valid SignInRequestDTO signInRequestDTO) {
-        Mono<KeycloakTokenSuccessResponseDTO> response = authenticationService.authenticate(signInRequestDTO);
+    @PostMapping("/signup")
+    public ResponseEntity<User> signup(@RequestBody @Valid SignUpRequest signUpRequest) {
+        User user = authenticationService.signup(signUpRequest);
 
-        return response.map(ResponseEntity::ok);
+        return ResponseEntity.ok(user);
+    }
+
+    @PostMapping("/signin")
+    public ResponseEntity<KeycloakTokenSuccessResponse> signin(@RequestBody @Valid SignInRequest signInRequest) {
+        KeycloakTokenSuccessResponse response = authenticationService.authenticate(signInRequest);
+
+        return ResponseEntity.ok(response);
     }
 }
