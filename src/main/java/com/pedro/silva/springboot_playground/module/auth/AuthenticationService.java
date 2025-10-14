@@ -29,7 +29,7 @@ public class AuthenticationService {
 
         map.add("grant_type", "password");
         map.add("client_id", clientId);
-        map.add("client_secret", "Dy4M64G3GmYmKbBN8GkT4sUA9TlbNNKu");
+        map.add("client_secret", "GNa3YjVcOdIUlhE9e7uMD9unorFG5aCg");
         map.add("username", username);
         map.add("password", password);
 
