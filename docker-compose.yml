@@ -34,7 +34,7 @@ services:
     ports:
       - 7777:7777
     volumes:
-      - ./keycloak/:/opt/keycloak/data/import/
+      - ./realm.json:/opt/keycloak/data/import/realm.json
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin

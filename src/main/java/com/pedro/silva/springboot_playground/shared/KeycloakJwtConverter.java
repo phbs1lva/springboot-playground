@@ -32,7 +32,7 @@ public class KeycloakJwtConverter implements Converter<Jwt, AbstractAuthenticati
         Collection<String> roles = (Collection<String>) realmAccess.get("roles");
 
         return roles.stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
-                    .collect(Collectors.toSet());
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
+                .collect(Collectors.toSet());
     }
 }

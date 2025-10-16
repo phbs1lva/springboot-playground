@@ -29,7 +29,7 @@ public class AuthenticationService {
 
         map.add("grant_type", "password");
         map.add("client_id", clientId);
-        map.add("client_secret", "Dy4M64G3GmYmKbBN8GkT4sUA9TlbNNKu");
+        map.add("client_secret", "8pPLSJBOa3OZRPaHNsvh0S0NmKupdRAb");
         map.add("username", username);
         map.add("password", password);
 
@@ -49,7 +49,7 @@ public class AuthenticationService {
         return response != null ? response.getAccess_token() : null;
     }
 
-    public String createUser(SignUpRequest signUpRequest) {
+    public void createUserInKeycloak(SignUpRequest signUpRequest) {
         String token = getAdminToken();
 
         KeycloakCredential credential = new KeycloakCredential("password", signUpRequest.getPassword(), false);
@@ -71,9 +71,21 @@ public class AuthenticationService {
                 .retrieve()
                 .toBodilessEntity();
 
-        String location = Objects.requireNonNull(response.getHeaders().getLocation()).toString();
+        String userId = Objects.requireNonNull(response.getHeaders().getLocation()).getPath().replaceAll(".*/([^/]+)$", "$1");
 
-        return location.substring(location.lastIndexOf('/') + 1);
+        String jsonBody = String.format(
+                "[{\"id\":\"%s\", \"name\":\"%s\"}]",
+                "41284381-e888-48ad-8b06-7b9741a664ae",
+                "customer"
+        );
+
+        var roleResponse = restClient.post()
+                .uri("http://localhost:7777/admin/realms/spring-playground/users/{id}/role-mappings/realm", userId)
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jsonBody)
+                .retrieve()
+                .toBodilessEntity();
     }
 
     public User signup(SignUpRequest signUpRequest) {
@@ -81,7 +93,7 @@ public class AuthenticationService {
             throw new UserAlreadyExistsException("User already exists.");
         }
 
-        String response = createUser(signUpRequest);
+        createUserInKeycloak(signUpRequest);
 
         User newUser = signUpMapper.toEntity(signUpRequest);
 
