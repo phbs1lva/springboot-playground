@@ -18,4 +18,4 @@ SELECT
     (random() * 990 + 10)::NUMERIC(10, 2) AS price,
     'https://placehold.co/600x400' AS image
 FROM
-    generate_series(1, 500) AS s;
+    generate_series(1, 100000) AS s;
