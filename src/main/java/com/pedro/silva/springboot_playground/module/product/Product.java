@@ -1,9 +1,11 @@
 package com.pedro.silva.springboot_playground.module.product;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -22,4 +24,10 @@ public class Product {
 
     @Column(nullable = false)
     String image;
+
+    @Column(nullable = false)
+    Boolean active = true;
+
+    @Column
+    LocalDateTime deletedAt;
 }
